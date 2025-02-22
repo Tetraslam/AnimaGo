@@ -25,6 +25,7 @@ dependencies = [
     "segment-anything",
     "sounddevice>=0.5.1",
     "torch>=2.6.0",
+    "torchaudio>=2.6.0",
     "torchvision>=0.21.0",
     "ultralytics==8.0.0",
     "websockets>=15.0",
