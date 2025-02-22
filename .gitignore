@@ -161,3 +161,11 @@ cython_debug/
 
 # Flet
 storage/
+
+# Model weights
+sam_vit_h_4b8939.pth
+*.pth
+
+# Generated stickers
+stickers/
+exports/
