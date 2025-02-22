@@ -33,7 +33,7 @@ AnimaGo gamifies wildlife conservation by harnessing the power of videogame addi
 - [ ] XP/leveling system
 - [ ] Leaderboard (animals found, accuracy, streaks)
 - [ ] Weather & time integration
-- [ ] Global heatmap of sightings
+- [ ] Global heatmap of sightings + comments on each sighting
 - [ ] Guilds (turn-based battler with animals you've found)
 - [ ] Animal leveling based on number found
 - [ ] Achievements & badges
@@ -52,6 +52,7 @@ AnimaGo gamifies wildlife conservation by harnessing the power of videogame addi
 - [ ] SPECIES DISCOVERY: visually distinct species which haven't been named get bonuses
 - [ ] Virtual museum of rare species
 - [ ] "Education Edition"
+- [ ] Colorblind mode
 
 ## Setup Instructions
 
