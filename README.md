@@ -87,6 +87,12 @@ uv pip compile pyproject.toml -o requirements.lock
 uv pip sync requirements.lock
 ```
 
+### Update Dependencies after a commit
+```bash
+git pull
+uv pip sync requirements.lock
+```
+
 ### Running the Application
 
 To run the app on your mobile device:
