@@ -94,6 +94,21 @@ git pull
 uv pip sync requirements.lock
 ```
 
+### Model Setup
+
+### Dependencies
+1. Install Python dependencies:
+```bash
+pip install -r requirements.lock
+```
+
+### Model Weights
+1. Download the Segment Anything Model (SAM) weights:
+```bash
+curl -L https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth -o sam_vit_h_4b8939.pth
+```
+This file is required for the sticker creation feature which uses SAM to extract animals from images.
+
 ### Running the Application
 
 To run the app on your mobile device:
