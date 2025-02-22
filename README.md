@@ -65,7 +65,7 @@ python -m pip install uv
 
 2. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/AnimaGo.git
+git clone https://github.com/Tetraslam/AnimaGo.git
 cd AnimaGo
 ```
 
@@ -80,32 +80,34 @@ source .venv/bin/activate
 
 4. Install dependencies with uv:
 ```bash
-# Install flet globally first
-uv pip install "flet[all]>=0.27.0"
+# Install project dependencies using the lockfile
+uv pip sync uv.lock
 
-# Install project dependencies
-uv pip sync
+# Install flet with all extras
+uv pip install "flet[all]>=0.27.0"
 ```
 
 ### Running the Application
 
 1. Start the application:
 ```bash
-# For development
-flet run src/main.py
+# For desktop development
+python src/main.py
 
-# For specific platforms
-flet run src/main.py -d android
-flet run src/main.py -d ios
-flet run src/main.py -d web
+# For web deployment
+flet run src/main.py --web
+
+# For mobile deployment
+flet run src/main.py --android  # For Android
+flet run src/main.py --ios      # For iOS
 ```
 
 ### Development Setup
 
 For development work:
 ```bash
-# Install dev dependencies
-uv pip sync --dev
+# Install all dependencies including development ones
+uv pip sync uv.lock pyproject.toml
 ```
 
 ### Troubleshooting
@@ -115,10 +117,14 @@ uv pip sync --dev
   python --version  # Should be 3.11 or higher
   ```
 - For GPU support with computer vision features, ensure you have the appropriate CUDA toolkit installed for your system.
-- If you encounter any issues with Flet, try reinstalling it globally:
+- If you encounter dependency issues:
   ```bash
-  uv pip install --upgrade "flet[all]>=0.27.0"
+  # Clean the environment and reinstall
+  uv pip uninstall --all
+  uv pip sync uv.lock
+  uv pip install "flet[all]>=0.27.0"
   ```
+- On Linux systems, you may need additional dependencies. Check the [Flet Linux prerequisites](https://flet.dev/docs/getting-started#linux).
 
 ### Environment Variables
 
@@ -131,4 +137,8 @@ FIREBASE_PROJECT_ID=your_project_id
 FIREBASE_STORAGE_BUCKET=your_storage_bucket
 FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 FIREBASE_APP_ID=your_app_id
+
+# Flet Configuration (optional)
+FLET_SESSION_TIMEOUT=3600  # Session timeout in seconds
+FLET_FORCE_WEB_VIEW=true  # Force web view for desktop apps
 ```
