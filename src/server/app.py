@@ -79,3 +79,7 @@ async def sync_user(user_data: dict) -> dict:
     user = User(**user_data)
     # TODO: Sync with database
     return user.__dict__ 
+
+@app.get("/geo/user_town_location")
+async def user_town_location(latitude: float, longitude: float):
+  pass # return the closest town/city

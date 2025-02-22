@@ -14,6 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Storage directory structure for data and temporary files
 - Basic README with feature roadmap
 - Assets directory with initial icon
+- Real-time camera view implementation using OpenCV
+- Custom CameraView control with 30 FPS preview
+- Proper camera cleanup on app exit
+- Direct frame capture for vision processing
+
+### Changed
+- Replaced file picker camera simulation with real camera feed
+- Updated dependencies to include OpenCV and Pillow
+- Improved capture UI with live preview
 
 ### Infrastructure
 - Python 3.11+ environment setup
