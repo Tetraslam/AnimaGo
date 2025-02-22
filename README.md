@@ -50,6 +50,8 @@ AnimaGo gamifies wildlife conservation by harnessing the power of videogame addi
 - [ ] PvP mode (biome mastery battles between guilds where you try and fill a biodiversity bar before the other guild; like clan wars)
 - [ ] Livestreaming with chats + donations
 - [ ] SPECIES DISCOVERY: visually distinct species which haven't been named get bonuses
+- [ ] Virtual museum of rare species
+- [ ] "Education Edition"
 
 ## Setup Instructions
 
