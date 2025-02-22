@@ -54,70 +54,81 @@ AnimaGo gamifies wildlife conservation by harnessing the power of videogame addi
 
 ### Prerequisites
 - Python 3.11 or higher
-- uv package manager (recommended) or pip
+- [uv](https://github.com/astral-sh/uv) package manager
 
 ### Installation
 
-1. Clone the repository:
+1. Install uv globally:
+```bash
+python -m pip install uv
+```
+
+2. Clone the repository:
 ```bash
 git clone https://github.com/yourusername/AnimaGo.git
 cd AnimaGo
 ```
 
-2. Create and activate a virtual environment:
+3. Create and activate a virtual environment with uv:
 ```bash
-# Using venv
-python -m venv .venv
+uv venv
 # On Windows
 .venv\Scripts\activate
 # On macOS/Linux
 source .venv/bin/activate
 ```
 
-3. Install dependencies:
+4. Install dependencies with uv:
 ```bash
-# Using uv (recommended)
-uv pip install -r requirements.txt
+# Install flet globally first
+uv pip install "flet[all]>=0.27.0"
+
+# Install project dependencies
+uv pip sync
 ```
 
 ### Running the Application
 
 1. Start the application:
 ```bash
-# From the project root
-flet run --YOUR_PLATFORM_HERE(android/ios/web)
+# For development
+flet run src/main.py
+
+# For specific platforms
+flet run src/main.py -d android
+flet run src/main.py -d ios
+flet run src/main.py -d web
 ```
-
-
 
 ### Development Setup
 
-For development, install development dependencies:
+For development work:
 ```bash
-# Using uv
-uv pip install --dev
-
-# Or using pip
-pip install -e ".[dev]"
+# Install dev dependencies
+uv pip sync --dev
 ```
 
 ### Troubleshooting
 
-- If you encounter any issues with Flet installation, make sure you have the latest version of pip:
+- If you get any Python version errors, verify your Python version:
   ```bash
-  python -m pip install --upgrade pip
+  python --version  # Should be 3.11 or higher
   ```
 - For GPU support with computer vision features, ensure you have the appropriate CUDA toolkit installed for your system.
-- Make sure your Python version matches the required version (3.11+) by running:
+- If you encounter any issues with Flet, try reinstalling it globally:
   ```bash
-  python --version
+  uv pip install --upgrade "flet[all]>=0.27.0"
   ```
 
 ### Environment Variables
 
 Create a `.env` file in the project root with the following variables:
 ```env
-# Add your environment variables here
-# Example:
-# FIREBASE_API_KEY=your_api_key
+# Firebase Configuration (required for authentication and database)
+FIREBASE_API_KEY=your_api_key
+FIREBASE_AUTH_DOMAIN=your_auth_domain
+FIREBASE_PROJECT_ID=your_project_id
+FIREBASE_STORAGE_BUCKET=your_storage_bucket
+FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+FIREBASE_APP_ID=your_app_id
 ```
