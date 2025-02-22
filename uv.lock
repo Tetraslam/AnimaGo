@@ -29,6 +29,7 @@ dependencies = [
     { name = "fastapi" },
     { name = "firebase-admin" },
     { name = "flet", extra = ["all"] },
+    { name = "flet-camera" },
     { name = "folium" },
     { name = "geopy" },
     { name = "moondream" },
@@ -58,6 +59,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.115.8" },
     { name = "firebase-admin", specifier = ">=6.6.0" },
     { name = "flet", extras = ["all"], specifier = ">=0.27.0" },
+    { name = "flet-camera", specifier = ">=0.0.1" },
     { name = "folium", specifier = ">=0.19.4" },
     { name = "geopy", specifier = ">=2.4.1" },
     { name = "moondream", specifier = ">=0.0.6" },
@@ -521,6 +523,14 @@ all = [
     { name = "flet-desktop", marker = "platform_system == 'Darwin' or platform_system == 'Windows'" },
     { name = "flet-desktop-light", marker = "platform_system == 'Linux'" },
     { name = "flet-web" },
+]
+
+[[package]]
+name = "flet-camera"
+version = "0.0.1"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/43/a7/731a8df70640e0bb676f06d25de8380db4188cab78f747cce5aa5732d4b4/flet_camera-0.0.1-py3-none-any.whl", hash = "sha256:43f948f21113871088a72c58e66e094b6f28f347008fa0d7108a6827ab191bc9", size = 2133 },
 ]
 
 [[package]]

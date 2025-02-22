@@ -1,0 +1,3 @@
+"""
+AnimaGo main package.
+""" 
