@@ -78,67 +78,21 @@ uv venv
 source .venv/bin/activate
 ```
 
-4. Install dependencies with uv:
+4. Install dependencies:
 ```bash
-# Install project dependencies using the lockfile
-uv pip sync uv.lock
-
-# Install flet with all extras
-uv pip install "flet[all]>=0.27.0"
+uv pip compile pyproject.toml -o requirements.lock
+uv pip sync requirements.lock
 ```
 
 ### Running the Application
 
-1. Start the application:
+To run the app on your mobile device:
 ```bash
-# For desktop development
-python src/main.py
+# For Android
+flet run src/main.py --android
 
-# For web deployment
-flet run src/main.py --web
-
-# For mobile deployment
-flet run src/main.py --android  # For Android
-flet run src/main.py --ios      # For iOS
+# For iOS
+flet run src/main.py --ios
 ```
 
-### Development Setup
-
-For development work:
-```bash
-# Install all dependencies including development ones
-uv pip sync uv.lock pyproject.toml
-```
-
-### Troubleshooting
-
-- If you get any Python version errors, verify your Python version:
-  ```bash
-  python --version  # Should be 3.11 or higher
-  ```
-- For GPU support with computer vision features, ensure you have the appropriate CUDA toolkit installed for your system.
-- If you encounter dependency issues:
-  ```bash
-  # Clean the environment and reinstall
-  uv pip uninstall --all
-  uv pip sync uv.lock
-  uv pip install "flet[all]>=0.27.0"
-  ```
-- On Linux systems, you may need additional dependencies. Check the [Flet Linux prerequisites](https://flet.dev/docs/getting-started#linux).
-
-### Environment Variables
-
-Create a `.env` file in the project root with the following variables:
-```env
-# Firebase Configuration (required for authentication and database)
-FIREBASE_API_KEY=your_api_key
-FIREBASE_AUTH_DOMAIN=your_auth_domain
-FIREBASE_PROJECT_ID=your_project_id
-FIREBASE_STORAGE_BUCKET=your_storage_bucket
-FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-FIREBASE_APP_ID=your_app_id
-
-# Flet Configuration (optional)
-FLET_SESSION_TIMEOUT=3600  # Session timeout in seconds
-FLET_FORCE_WEB_VIEW=true  # Force web view for desktop apps
-```
+Scan the QR code that appears with your device's camera app.
