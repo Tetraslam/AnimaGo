@@ -10,7 +10,24 @@ authors = [
     { name = "Raymond Xu", email = "Ray01778@gmail.com" }
 ]
 dependencies = [
+    "fastapi>=0.115.8",
+    "firebase-admin>=6.6.0",
     "flet[all]>=0.27.0",
+    "folium>=0.19.4",
+    "geopy>=2.4.1",
+    "moondream>=0.0.6",
+    "numpy>=2.2.3",
+    "opencv-python>=4.11.0.86",
+    "pillow>=10.4.0",
+    "pydantic>=2.10.6",
+    "python-dotenv>=1.0.1",
+    "requests>=2.32.3",
+    "segment-anything",
+    "sounddevice>=0.5.1",
+    "torch>=2.6.0",
+    "torchvision>=0.21.0",
+    "ultralytics==8.0.0",
+    "websockets>=15.0",
 ]
 
 [tool.flet]
@@ -35,6 +52,9 @@ path = "src"
 dev-dependencies = [
     "flet[all]==0.27.0",
 ]
+
+[tool.uv.sources]
+segment-anything = { git = "https://github.com/facebookresearch/segment-anything.git" }
 
 [tool.poetry]
 package-mode = false

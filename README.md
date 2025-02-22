@@ -15,7 +15,7 @@ AnimaGo gamifies wildlife conservation by harnessing the power of videogame addi
 - OpenCV  
 - PyTorch  
 - YOLOv8  
-- Segment Anything Model  
+- Segment Anything Model 2
 
 ### Geospatial & Mapping  
 - GeoPy  
