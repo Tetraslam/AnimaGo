@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replaced file picker camera simulation with real camera feed
 - Updated dependencies to include OpenCV and Pillow
 - Improved capture UI with live preview
+- Enhanced camera capture workflow with back button and proper view reset
+- Fixed "Capture Another" functionality to properly return to camera view
 
 ### Infrastructure
 - Python 3.11+ environment setup

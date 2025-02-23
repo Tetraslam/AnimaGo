@@ -11,6 +11,9 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+# Clean environment variables (strip quotes)
+os.environ["MOONDREAM_API_KEY"] = os.getenv("MOONDREAM_API_KEY", "").strip().strip('"').strip("'")
+
 # Base paths
 ROOT_DIR = Path(__file__).parent.parent.parent
 ASSETS_DIR = ROOT_DIR / "src" / "assets"
