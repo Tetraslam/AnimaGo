@@ -42,13 +42,6 @@ click==8.1.8
     # via
     #   cookiecutter
     #   uvicorn
-colorama==0.4.6
-    # via
-    #   click
-    #   ipython
-    #   qrcode
-    #   tqdm
-    #   uvicorn
 coloredlogs==15.0.1
     # via onnxruntime
 contourpy==1.3.1
@@ -250,6 +243,8 @@ pandas==2.2.3
     #   ultralytics
 parso==0.8.4
     # via jedi
+pexpect==4.9.0
+    # via ipython
 pillow==10.4.0
     # via
     #   animago (pyproject.toml)
@@ -275,6 +270,8 @@ protobuf==5.29.3
     #   tensorboard
 psutil==7.0.0
     # via ultralytics
+ptyprocess==0.7.0
+    # via pexpect
 pure-eval==0.2.3
     # via stack-data
 pyasn1==0.6.1
@@ -303,8 +300,6 @@ pyparsing==3.2.1
     #   matplotlib
 pypng==0.20220715.0
     # via qrcode
-pyreadline3==3.5.4
-    # via humanfriendly
 python-dateutil==2.9.0.post0
     # via
     #   arrow
@@ -314,6 +309,8 @@ python-dotenv==1.0.1
     # via
     #   animago (pyproject.toml)
     #   uvicorn
+python-multipart==0.0.20
+    # via animago (pyproject.toml)
 python-slugify==8.0.4
     # via cookiecutter
 pytz==2025.1
@@ -425,6 +422,8 @@ urllib3==2.3.0
     # via requests
 uvicorn==0.34.0
     # via flet-web
+uvloop==0.21.0
+    # via uvicorn
 watchdog==4.0.2
     # via flet-cli
 watchfiles==1.0.4
