@@ -4,6 +4,8 @@ Handles vision processing, geolocation, and user data.
 """
 
 import json
+import requests
+
 from datetime import datetime
 from pathlib import Path
 from typing import List
@@ -82,5 +84,24 @@ async def sync_user(user_data: dict) -> dict:
 
 @app.get("/geo/user_town_location")
 async def user_town_location(latitude: float, longitude: float):
-  town = "" #put your logic here
-  return {"latitude": latitude, "longitude": longitude, "town": town}
+  base_url = "https://nominatim.openstreetmap.org/reverse"
+  headers = {
+    'User-Agent': 'My User Agent 1.0',
+    }   
+  
+  params = {
+        "lat": latitude,
+        "lon": longitude,
+        "format": "json"
+        }   
+  response = requests.get(base_url, params=params, headers=headers)
+  
+  if response.status_code == 200:
+    data = response.json()
+    address = data.get("address", {})
+    town = address.get("city")
+    state = address.get("state")
+    country = address.get("country")
+    return {"latitude": latitude, "longitude": longitude, "town": town, "state": state, "country": country}
+  else:   
+    return {"error": f"Failed to retrieve location information: {response.text}"}
