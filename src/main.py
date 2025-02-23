@@ -19,6 +19,7 @@ from PIL import Image as PILImage
 from PIL import ImageDraw
 
 from components.achievements import AchievementsSection
+from components.biodex import BiodexSection
 from components.leaderboard import LeaderboardSection
 from config import TEMP_DIR
 from firebase.firebase_config import get_user_sightings
@@ -989,7 +990,7 @@ def main(page: ft.Page):
                                     content=Column(
                                         controls=[
                                             Text(
-                                                "3",
+                                                "5",
                                                 size=24,
                                                 weight=ft.FontWeight.BOLD,
                                             ),
