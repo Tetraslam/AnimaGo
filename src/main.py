@@ -2,6 +2,7 @@ import base64
 import io
 import threading
 import time
+from dataclasses import dataclass
 
 import cv2
 import flet as ft
@@ -11,6 +12,16 @@ from flet import (Colors, Column, Container, ElevatedButton, Icon, IconButton,
                   Icons, Image, Page, Row, Tab, Tabs, Text, View, padding)
 from PIL import Image as PILImage
 
+from components.achievements import AchievementsSection
+from components.leaderboard import LeaderboardSection
+
+@dataclass
+class AchievementData:
+    title: str
+    description: str
+    icon: str
+    progress: float  # 0.0 to 1.0
+    color: str
 
 def create_camera_view(on_capture, page: ft.Page):
     camera = None
@@ -269,32 +280,97 @@ def main(page: ft.Page):
     # View: Profile
     profile_view = Column(
         controls=[
-            Text("Profile", size=32, weight=ft.FontWeight.BOLD),
+            # User info section
             Container(
                 content=Column(
                     controls=[
-                        Icon(Icons.ACCOUNT_CIRCLE, size=80),
-                        Text("Guest User", size=24),
-                        Container(height=10),
                         Row(
                             controls=[
-                                Icon(Icons.STAR, color=Colors.YELLOW),
-                                Text("Level 1", size=16),
+                                Container(
+                                    content=Icon(
+                                        name=Icons.ACCOUNT_CIRCLE,
+                                        size=60,
+                                        color=Colors.BLUE_400,
+                                    ),
+                                    margin=padding.only(right=20),
+                                ),
+                                Column(
+                                    controls=[
+                                        Text(
+                                            "Wildlife Explorer",
+                                            size=24,
+                                            weight=ft.FontWeight.BOLD,
+                                        ),
+                                        Text(
+                                            "Level 5",
+                                            size=16,
+                                            color=Colors.BLUE_400,
+                                        ),
+                                    ],
+                                ),
                             ],
-                            alignment=ft.MainAxisAlignment.CENTER,
                         ),
                         Container(height=20),
-                        ElevatedButton(
-                            "Sign In",
-                            icon=Icons.LOGIN,
+                        Row(
+                            controls=[
+                                Container(
+                                    content=Column(
+                                        controls=[
+                                            Text(
+                                                "42",
+                                                size=24,
+                                                weight=ft.FontWeight.BOLD,
+                                            ),
+                                            Text("Sightings"),
+                                        ],
+                                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                                    ),
+                                    expand=True,
+                                ),
+                                Container(
+                                    content=Column(
+                                        controls=[
+                                            Text(
+                                                "12",
+                                                size=24,
+                                                weight=ft.FontWeight.BOLD,
+                                            ),
+                                            Text("Species"),
+                                        ],
+                                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                                    ),
+                                    expand=True,
+                                ),
+                                Container(
+                                    content=Column(
+                                        controls=[
+                                            Text(
+                                                "3",
+                                                size=24,
+                                                weight=ft.FontWeight.BOLD,
+                                            ),
+                                            Text("Badges"),
+                                        ],
+                                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                                    ),
+                                    expand=True,
+                                ),
+                            ],
                         ),
                     ],
-                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 ),
                 padding=20,
             ),
+            # Add achievements section
+            AchievementsSection(page),
         ],
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+    )
+    
+    # View: Leaderboard
+    leaderboard_view = Container(
+        content=LeaderboardSection(page=page),
+        padding=20,
     )
     
     # Content area with tabs
@@ -328,6 +404,16 @@ def main(page: ft.Page):
                     ),
                 ),
                 Tab(
+                    text="Leaderboard",
+                    icon=Icons.LEADERBOARD_OUTLINED,
+                    content=leaderboard_view,
+                ),
+                Tab(
+                    text="Leaderboard",
+                    icon=Icons.LEADERBOARD_OUTLINED,
+                    content=leaderboard_view,
+                ),
+                Tab(
                     text="Profile",
                     icon=Icons.PERSON_OUTLINED,
                     content=Container(
@@ -340,6 +426,9 @@ def main(page: ft.Page):
         expand=True,
         padding=0,
     )
+    
+    # Store content area in page session for achievement navigation
+    page.session.set("content_area", content_area)
     
     # Handle cleanup
     page.on_view_pop = lambda _: stop_camera()
