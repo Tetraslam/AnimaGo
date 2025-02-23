@@ -117,3 +117,14 @@ def custom_encoder(obj):
     if isinstance(obj, datetime):
         return obj.isoformat()
     raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
+
+def get_top_users(n):
+    users_ref = db.collection('users')
+    query = users_ref.order_by('xp', direction=firestore.Query.DESCENDING).limit(n)
+    results = query.stream()
+
+    top_users = []
+    for user in results:
+        top_users.append(user.to_dict())
+
+    return top_users
