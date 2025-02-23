@@ -29,6 +29,7 @@ class Coordinates(BaseModel):
 class Comment(BaseModel):
     userID: UUID
     comment: str
+    timestamp: datetime = Field(default_factory=lambda: datetime.now())
 
 class Sighting(BaseModel):
     userID: UUID
@@ -93,6 +94,9 @@ def add_sighting(sighting_data: dict, user_id: str, sighting_pic_filename: str):
     upload_sighting_image(destination_blob_name, sighting_pic_filename, str(user_id))
     sighting_data['sightingURL'] = destination_blob_name
 
+    sighting_data['createdAt'] = datetime.now()
+    sighting_data['updatedAt'] = datetime.now()
+
     # Add the sighting to the 'sightings_map' collection with sightingID
     sighting = Sighting(**sighting_data)
     sighting_dict = json.loads(json.dumps(sighting.dict(), default=custom_encoder))
@@ -125,25 +129,23 @@ def upload_sighting_image(destination_blob_name, from_file_name: str, user_id: s
     blob.upload_from_filename(file_path)
     print(f"File {file_path} uploaded to {destination_blob_name} in sighting_pics bucket.")
 
-def add_comment(sighting_id: str, user_id: str, comment: str):
-    sighting_ref = db.collection('sightings_map').document(sighting_id)
-    
-    # Check if the document exists
-    if not sighting_ref.get().exists:
-        # Create the document if it does not exist
-        sighting_ref.set({
-            'comments': []
+def add_comment(sighting_id: str, comment_by_user_id: str, comment: str):
+    sighting_ref = db.collection('sightings_map').where('sightingID', '==', str(sighting_id)).limit(1)
+    result = sighting_ref.get()
+
+    if result:
+        doc_ref = result[0].reference
+
+        # Update the document with the new comment
+        doc_ref.update({
+            'comments': firestore.ArrayUnion([{
+                'userID': comment_by_user_id,
+                'comment': comment,
+                'timestamp': datetime.now()
+            }])
         })
     
-    # Update the document with the new comment
-    sighting_ref.update({
-        'comments': firestore.ArrayUnion([{
-            'user_id': user_id,
-            'comment': comment,
-            'timestamp': SERVER_TIMESTAMP
-        }])
-    })
-    print(f"Comment added to sighting {sighting_id} by user {user_id}.")
+    print(f"Comment added to sighting {sighting_id} by user {comment_by_user_id}.")
 
 def custom_encoder(obj):
     if isinstance(obj, UUID):
