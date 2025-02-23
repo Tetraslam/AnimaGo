@@ -12,6 +12,7 @@ from flet import (Colors, Column, Container, ElevatedButton, Icon, IconButton,
 from PIL import Image as PILImage
 
 from components.achievements import AchievementsSection
+from components.leaderboard import LeaderboardSection
 
 @dataclass
 class AchievementData:
@@ -337,6 +338,12 @@ def main(page: ft.Page):
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
     )
     
+    # View: Leaderboard
+    leaderboard_view = Container(
+        content=LeaderboardSection(page=page),
+        padding=20,
+    )
+    
     # Content area with tabs
     content_area = Container(
         content=Tabs(
@@ -357,6 +364,11 @@ def main(page: ft.Page):
                     text="Biodex",
                     icon=Icons.MENU_BOOK_OUTLINED,
                     content=biodex_view,
+                ),
+                Tab(
+                    text="Leaderboard",
+                    icon=Icons.LEADERBOARD_OUTLINED,
+                    content=leaderboard_view,
                 ),
                 Tab(
                     text="Profile",
