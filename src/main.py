@@ -7,12 +7,14 @@ from dataclasses import dataclass
 import cv2
 import flet as ft
 import numpy as np
+import requests
 from flet import (Colors, Column, Container, ElevatedButton, Icon, IconButton,
                   Icons, Image, Page, Row, Tab, Tabs, Text, View, padding)
 from PIL import Image as PILImage
 
 from components.achievements import AchievementsSection
 from components.leaderboard import LeaderboardSection
+
 
 @dataclass
 class AchievementData:
@@ -26,8 +28,8 @@ def create_camera_view(on_capture, page: ft.Page):
     camera = None
     is_running = False
     image = ft.Image(
-        width=640,
-        height=480,
+        width=336,
+        height=252,
         fit=ft.ImageFit.CONTAIN,
         border_radius=10,
     )
@@ -35,7 +37,7 @@ def create_camera_view(on_capture, page: ft.Page):
     def start_camera():
         nonlocal camera, is_running
         if camera is None:
-            camera = cv2.VideoCapture(0)
+            camera = cv2.VideoCapture(1)
             if not camera.isOpened():
                 print("Error: Could not open camera")
                 return
@@ -100,10 +102,9 @@ def main(page: ft.Page):
     # App configuration
     page.title = "AnimaGo"
     page.theme_mode = ft.ThemeMode.DARK
-    page.bgcolor = Colors.BLACK
-    page.padding = padding.only(top=50)  # Add top padding
-    page.window_width = 400
-    page.window_height = 850
+    page.window_bgcolor = Colors.TRANSPARENT
+    page.spacing = 0
+    page.padding = padding.only(top=40)
     
     # Define reusable colors
     CARD_COLOR = Colors.BLUE_GREY_800
@@ -112,14 +113,23 @@ def main(page: ft.Page):
         # Convert frame to RGB
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         
-        # Convert frame to format Flet can display
+        # Convert to PIL Image and save as JPEG
         pil_image = PILImage.fromarray(rgb_frame)
-        img_byte_arr = io.BytesIO()
-        pil_image.save(img_byte_arr, format='PNG')
-        img_byte_arr = img_byte_arr.getvalue()
-        img_base64 = base64.b64encode(img_byte_arr).decode()
         
-        def process_image(e):
+        # Save to bytes for display
+        display_buffer = io.BytesIO()
+        pil_image.save(display_buffer, format='PNG')
+        img_base64 = base64.b64encode(display_buffer.getvalue()).decode()
+        
+        # Save to temporary JPEG for API
+        temp_buffer = io.BytesIO()
+        pil_image.save(temp_buffer, format='JPEG')
+        
+        # Immediately call process_image
+        process_image(None, temp_buffer.getvalue(), img_base64)
+    
+    def process_image(e, image_bytes=None, display_base64=None):
+        try:
             # Show loading state
             content_area.content = Column(
                 controls=[
@@ -130,29 +140,52 @@ def main(page: ft.Page):
             )
             page.update()
             
-            # This is where you add your image processing logic
-            # The 'frame' variable contains the original CV2 frame in BGR format
-            # rgb_frame contains the RGB version
-            
-            # Example of how you might process the image:
             try:
-                # Your image processing code here
-                # For example:
-                # results = your_ml_model.predict(frame)
-                # detected_animals = process_results(results)
+                # Make request to Moondream endpoint
+                files = {
+                    "file": ("image.jpg", io.BytesIO(image_bytes), "image/jpeg")
+                }
+                response = requests.post("http://localhost:8000/moondream/describe", files=files)
                 
-                # For now, showing dummy results
+                if response.status_code != 200:
+                    error_detail = response.json().get('detail', 'Unknown error')
+                    raise Exception(f"API request failed: {error_detail}")
+                    
+                result = response.json()
+                description = result.get('description', 'No description available')
                 
+                # Display results
                 content_area.content = Column(
                     controls=[
-                        Text("Found:", size=24, weight=ft.FontWeight.BOLD),
-                        Text("• Red Fox (87% confidence)", color=Colors.GREEN),
-                        Text("• European Rabbit (92% confidence)", color=Colors.GREEN),
+                        Row(
+                            controls=[
+                                IconButton(
+                                    icon=Icons.ARROW_BACK,
+                                    icon_color=Colors.WHITE,
+                                    on_click=lambda _: show_capture_view(),
+                                ),
+                                Text("Analysis:", size=24, weight=ft.FontWeight.BOLD),
+                            ],
+                            alignment=ft.MainAxisAlignment.START,
+                        ),
+                        Image(
+                            src_base64=display_base64,
+                            width=300,
+                            height=300,
+                            fit=ft.ImageFit.CONTAIN,
+                        ),
+                        Container(height=10),
+                        Text(description, size=16),
                         Container(height=20),
-                        ElevatedButton(
-                            "Capture Another",
-                            icon=Icons.CAMERA_ALT,
-                            on_click=lambda _: start_camera(),
+                        Row(
+                            controls=[
+                                ElevatedButton(
+                                    "Capture Another",
+                                    icon=Icons.CAMERA_ALT,
+                                    on_click=lambda _: show_capture_view(),
+                                ),
+                            ],
+                            alignment=ft.MainAxisAlignment.CENTER,
                         ),
                     ],
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
@@ -161,19 +194,105 @@ def main(page: ft.Page):
                 # Handle any errors during processing
                 content_area.content = Column(
                     controls=[
-                        Text("Error processing image", size=24, color=Colors.RED),
+                        Row(
+                            controls=[
+                                IconButton(
+                                    icon=Icons.ARROW_BACK,
+                                    icon_color=Colors.WHITE,
+                                    on_click=lambda _: show_capture_view(),
+                                ),
+                                Text("Error processing image", size=24, color=Colors.RED),
+                            ],
+                            alignment=ft.MainAxisAlignment.START,
+                        ),
                         Text(str(e), size=16),
                         Container(height=20),
                         ElevatedButton(
                             "Try Again",
                             icon=Icons.CAMERA_ALT,
-                            on_click=lambda _: start_camera(),
+                            on_click=lambda _: show_capture_view(),
                         ),
                     ],
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 )
-            finally:
-                page.update()
+        except Exception as e:
+            # Handle any errors during processing
+            content_area.content = Column(
+                controls=[
+                    Row(
+                        controls=[
+                            IconButton(
+                                icon=Icons.ARROW_BACK,
+                                icon_color=Colors.WHITE,
+                                on_click=lambda _: show_capture_view(),
+                            ),
+                            Text("Error processing image", size=24, color=Colors.RED),
+                        ],
+                        alignment=ft.MainAxisAlignment.START,
+                    ),
+                    Text(str(e), size=16),
+                    Container(height=20),
+                    ElevatedButton(
+                        "Try Again",
+                        icon=Icons.CAMERA_ALT,
+                        on_click=lambda _: show_capture_view(),
+                    ),
+                ],
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            )
+        finally:
+            page.update()
+    
+    def show_capture_view():
+        # Reset to capture view
+        content_area.content = Tabs(
+            selected_index=0,
+            animation_duration=300,
+            tabs=[
+                Tab(
+                    text="Capture",
+                    icon=Icons.CAMERA_ALT_OUTLINED,
+                    content=Container(
+                        content=capture_view,
+                        padding=padding.only(top=10, left=10, right=10),
+                    ),
+                ),
+                Tab(
+                    text="Map", 
+                    icon=Icons.MAP_OUTLINED,
+                    content=Container(
+                      content=map_view,
+                      padding=padding.only(top=10, left=10, right=10),
+                    ),
+                ),
+                Tab(
+                    text="Biodex",
+                    icon=Icons.MENU_BOOK_OUTLINED, 
+                    content=Container(
+                      content=biodex_view,
+                      padding=padding.only(top=10, left=10, right=10),
+                    ),
+                ),
+                Tab(
+                    text="Leaderboard",
+                    icon=Icons.LEADERBOARD_OUTLINED,
+                    content=leaderboard_view,
+                ),
+                Tab(
+                    text="Leaderboard",
+                    icon=Icons.LEADERBOARD_OUTLINED,
+                    content=leaderboard_view,
+                ),
+                Tab(
+                    text="Profile",
+                    icon=Icons.PERSON_OUTLINED,
+                    content=Container(
+                      content=profile_view,
+                      padding=padding.only(top=10, left=10, right=10),
+                    ),
+                ),
+            ],
+        )
     
     # Create camera view
     camera_view, start_camera, stop_camera = create_camera_view(handle_capture, page)
@@ -183,7 +302,7 @@ def main(page: ft.Page):
         controls=[
             Text("\n  Ready to discover\n  wildlife?", size=32, weight=ft.FontWeight.BOLD),
             Text("Point your camera at an animal to begin", size=16),
-            Container(height=20),
+            Container(height=8),
             camera_view,
         ],
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
@@ -353,17 +472,31 @@ def main(page: ft.Page):
                 Tab(
                     text="Capture",
                     icon=Icons.CAMERA_ALT_OUTLINED,
-                    content=capture_view,
+                    content=Container(
+                      content=capture_view,
+                      padding=padding.only(top=10, left=10, right=10),
+                    ),
                 ),
                 Tab(
-                    text="Map",
+                    text="Map", 
                     icon=Icons.MAP_OUTLINED,
-                    content=map_view,
+                    content=Container(
+                      content=map_view,
+                      padding=padding.only(top=10, left=10, right=10),
+                    ),
                 ),
                 Tab(
                     text="Biodex",
-                    icon=Icons.MENU_BOOK_OUTLINED,
-                    content=biodex_view,
+                    icon=Icons.MENU_BOOK_OUTLINED, 
+                    content=Container(
+                      content=biodex_view,
+                      padding=padding.only(top=10, left=10, right=10),
+                    ),
+                ),
+                Tab(
+                    text="Leaderboard",
+                    icon=Icons.LEADERBOARD_OUTLINED,
+                    content=leaderboard_view,
                 ),
                 Tab(
                     text="Leaderboard",
@@ -373,11 +506,15 @@ def main(page: ft.Page):
                 Tab(
                     text="Profile",
                     icon=Icons.PERSON_OUTLINED,
-                    content=profile_view,
+                    content=Container(
+                      content=profile_view,
+                      padding=padding.only(top=10, left=10, right=10),
+                    ),
                 ),
             ],
         ),
         expand=True,
+        padding=0,
     )
     
     # Store content area in page session for achievement navigation

@@ -3,20 +3,42 @@ FastAPI server for AnimaGo backend.
 Handles vision processing, geolocation, and user data.
 """
 
-import json
-import requests
-
-from datetime import datetime
+import os
 from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Load environment variables first
+env_path = Path(__file__).parent.parent.parent / '.env'
+load_dotenv(env_path)
+
+import base64
+import io
+import json
+import logging
+from datetime import datetime
 from typing import List
 
-from fastapi import FastAPI, File, Form, UploadFile
+import moondream as md
+import requests
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from PIL import Image
 
 from ..config import TEMP_DIR
 from ..core import Animal, Location, User
 from ..geo import GeoSystem
 from ..vision import VisionSystem
+
+# Set up logging first
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Log environment setup
+logger.info("Starting server with environment:")
+logger.info(f"MOONDREAM_API_KEY configured: {'MOONDREAM_API_KEY' in os.environ}")
+logger.info(f"Current working directory: {os.getcwd()}")
+logger.info(f"Environment file path: {env_path}")
 
 app = FastAPI(title="AnimaGo API")
 vision_system = VisionSystem()
@@ -105,3 +127,38 @@ async def user_town_location(latitude: float, longitude: float):
     return {"latitude": latitude, "longitude": longitude, "town": town, "state": state, "country": country}
   else:   
     return {"error": f"Failed to retrieve location information: {response.text}"}
+
+@app.post("/moondream/describe")
+async def moondream_describe(file: UploadFile = File(...)):
+    try:
+        
+        content = await file.read()
+        
+        # Save to temporary file
+        temp_path = TEMP_DIR / f"temp_{file.filename}"
+        with open(temp_path, "wb") as f:
+            f.write(content)
+        
+        try:
+            # Initialize model
+            api_key = os.getenv("MOONDREAM_API_KEY")
+            print(api_key)
+            model = md.vl(api_key=api_key)
+            
+            # Load and process image
+            image = Image.open(temp_path)
+            encoded_image = model.encode_image(image)
+            description = model.query(encoded_image, "What species is in this image? Respond in the format 'Species: YOUR ANSWER HERE'")["answer"]
+            
+            return {"description": description}
+            
+        except Exception as e:
+            logger.error(f"Error processing image: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Error processing image: {str(e)}")
+        finally:
+            # Clean up temp file
+            temp_path.unlink(missing_ok=True)
+            
+    except Exception as e:
+        logger.error(f"Server error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
