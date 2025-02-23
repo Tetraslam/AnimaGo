@@ -15,6 +15,7 @@ from PIL import Image as PILImage
 from components.achievements import AchievementsSection
 from components.leaderboard import LeaderboardSection
 
+
 @dataclass
 class AchievementData:
     title: str
@@ -36,7 +37,7 @@ def create_camera_view(on_capture, page: ft.Page):
     def start_camera():
         nonlocal camera, is_running
         if camera is None:
-            camera = cv2.VideoCapture(0)
+            camera = cv2.VideoCapture(1)
             if not camera.isOpened():
                 print("Error: Could not open camera")
                 return
@@ -109,22 +110,25 @@ def main(page: ft.Page):
     CARD_COLOR = Colors.BLUE_GREY_800
     
     def handle_capture(frame):
-        global img_byte_arr, img_base64  # Make these variables accessible in process_image
-        
         # Convert frame to RGB
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         
-        # Convert frame to format Flet can display
+        # Convert to PIL Image and save as JPEG
         pil_image = PILImage.fromarray(rgb_frame)
-        img_byte_arr = io.BytesIO()
-        pil_image.save(img_byte_arr, format='PNG')
-        img_byte_arr = img_byte_arr.getvalue()
-        img_base64 = base64.b64encode(img_byte_arr).decode()
         
-        # Immediately call process_image instead of waiting for button click
-        process_image(None)  # Pass None since we don't need the event parameter
+        # Save to bytes for display
+        display_buffer = io.BytesIO()
+        pil_image.save(display_buffer, format='PNG')
+        img_base64 = base64.b64encode(display_buffer.getvalue()).decode()
+        
+        # Save to temporary JPEG for API
+        temp_buffer = io.BytesIO()
+        pil_image.save(temp_buffer, format='JPEG')
+        
+        # Immediately call process_image
+        process_image(None, temp_buffer.getvalue(), img_base64)
     
-    def process_image(e):
+    def process_image(e, image_bytes=None, display_base64=None):
         try:
             # Show loading state
             content_area.content = Column(
@@ -139,7 +143,7 @@ def main(page: ft.Page):
             try:
                 # Make request to Moondream endpoint
                 files = {
-                    "file": ("image.png", io.BytesIO(img_byte_arr), "image/png")
+                    "file": ("image.jpg", io.BytesIO(image_bytes), "image/jpeg")
                 }
                 response = requests.post("http://localhost:8000/moondream/describe", files=files)
                 
@@ -153,9 +157,19 @@ def main(page: ft.Page):
                 # Display results
                 content_area.content = Column(
                     controls=[
-                        Text("Analysis:", size=24, weight=ft.FontWeight.BOLD),
+                        Row(
+                            controls=[
+                                IconButton(
+                                    icon=Icons.ARROW_BACK,
+                                    icon_color=Colors.WHITE,
+                                    on_click=lambda _: show_capture_view(),
+                                ),
+                                Text("Analysis:", size=24, weight=ft.FontWeight.BOLD),
+                            ],
+                            alignment=ft.MainAxisAlignment.START,
+                        ),
                         Image(
-                            src_base64=img_base64,
+                            src_base64=display_base64,
                             width=300,
                             height=300,
                             fit=ft.ImageFit.CONTAIN,
@@ -163,10 +177,15 @@ def main(page: ft.Page):
                         Container(height=10),
                         Text(description, size=16),
                         Container(height=20),
-                        ElevatedButton(
-                            "Capture Another",
-                            icon=Icons.CAMERA_ALT,
-                            on_click=lambda _: start_camera(),
+                        Row(
+                            controls=[
+                                ElevatedButton(
+                                    "Capture Another",
+                                    icon=Icons.CAMERA_ALT,
+                                    on_click=lambda _: show_capture_view(),
+                                ),
+                            ],
+                            alignment=ft.MainAxisAlignment.CENTER,
                         ),
                     ],
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
@@ -175,13 +194,23 @@ def main(page: ft.Page):
                 # Handle any errors during processing
                 content_area.content = Column(
                     controls=[
-                        Text("Error processing image", size=24, color=Colors.RED),
+                        Row(
+                            controls=[
+                                IconButton(
+                                    icon=Icons.ARROW_BACK,
+                                    icon_color=Colors.WHITE,
+                                    on_click=lambda _: show_capture_view(),
+                                ),
+                                Text("Error processing image", size=24, color=Colors.RED),
+                            ],
+                            alignment=ft.MainAxisAlignment.START,
+                        ),
                         Text(str(e), size=16),
                         Container(height=20),
                         ElevatedButton(
                             "Try Again",
                             icon=Icons.CAMERA_ALT,
-                            on_click=lambda _: start_camera(),
+                            on_click=lambda _: show_capture_view(),
                         ),
                     ],
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
@@ -190,19 +219,80 @@ def main(page: ft.Page):
             # Handle any errors during processing
             content_area.content = Column(
                 controls=[
-                    Text("Error processing image", size=24, color=Colors.RED),
+                    Row(
+                        controls=[
+                            IconButton(
+                                icon=Icons.ARROW_BACK,
+                                icon_color=Colors.WHITE,
+                                on_click=lambda _: show_capture_view(),
+                            ),
+                            Text("Error processing image", size=24, color=Colors.RED),
+                        ],
+                        alignment=ft.MainAxisAlignment.START,
+                    ),
                     Text(str(e), size=16),
                     Container(height=20),
                     ElevatedButton(
                         "Try Again",
                         icon=Icons.CAMERA_ALT,
-                        on_click=lambda _: start_camera(),
+                        on_click=lambda _: show_capture_view(),
                     ),
                 ],
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             )
         finally:
             page.update()
+    
+    def show_capture_view():
+        # Reset to capture view
+        content_area.content = Tabs(
+            selected_index=0,
+            animation_duration=300,
+            tabs=[
+                Tab(
+                    text="Capture",
+                    icon=Icons.CAMERA_ALT_OUTLINED,
+                    content=Container(
+                        content=capture_view,
+                        padding=padding.only(top=10, left=10, right=10),
+                    ),
+                ),
+                Tab(
+                    text="Map", 
+                    icon=Icons.MAP_OUTLINED,
+                    content=Container(
+                      content=map_view,
+                      padding=padding.only(top=10, left=10, right=10),
+                    ),
+                ),
+                Tab(
+                    text="Biodex",
+                    icon=Icons.MENU_BOOK_OUTLINED, 
+                    content=Container(
+                      content=biodex_view,
+                      padding=padding.only(top=10, left=10, right=10),
+                    ),
+                ),
+                Tab(
+                    text="Leaderboard",
+                    icon=Icons.LEADERBOARD_OUTLINED,
+                    content=leaderboard_view,
+                ),
+                Tab(
+                    text="Leaderboard",
+                    icon=Icons.LEADERBOARD_OUTLINED,
+                    content=leaderboard_view,
+                ),
+                Tab(
+                    text="Profile",
+                    icon=Icons.PERSON_OUTLINED,
+                    content=Container(
+                      content=profile_view,
+                      padding=padding.only(top=10, left=10, right=10),
+                    ),
+                ),
+            ],
+        )
     
     # Create camera view
     camera_view, start_camera, stop_camera = create_camera_view(handle_capture, page)
