@@ -462,11 +462,6 @@ def main(page: ft.Page):
                     content=leaderboard_view,
                 ),
                 Tab(
-                    text="Leaderboard",
-                    icon=Icons.LEADERBOARD_OUTLINED,
-                    content=leaderboard_view,
-                ),
-                Tab(
                     text="Profile",
                     icon=Icons.PERSON_OUTLINED,
                     content=Container(
