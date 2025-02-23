@@ -423,66 +423,60 @@ def main(page: ft.Page):
                 # Save sighting to Firebase
                 def handle_save_sighting(e):
                     try:
+                        print("Save sighting button clicked")
                         # Create a temporary file-like object in memory
                         temp_buffer = io.BytesIO(image_bytes)
                         temp_buffer.name = "image.jpg"  # Set a name for the file
+                        print("Created temp buffer for image")
 
-                        def on_location(e):
-                            try:
-                                # Get coordinates from location event
-                                lat = e.data['latitude']
-                                lng = e.data['longitude']
-                                accuracy = e.data.get('accuracy', 0)
-                                
-                                # Upload to server
-                                files = {"file": ("image.jpg", temp_buffer, "image/jpeg")}
-                                data = {
-                                    "latitude": lat,
-                                    "longitude": lng,
-                                    "accuracy": accuracy,
-                                    "timestamp": datetime.now().isoformat()
-                                }
-                                
-                                response = requests.post(
-                                    "http://localhost:8000/vision/process",
-                                    files=files,
-                                    data=data,
-                                    headers=headers
-                                )
+                        # Use Boston's coordinates
+                        lat = 42.3601
+                        lng = -71.0589
+                        accuracy = 0
+                        
+                        print(f"Using Boston coordinates: {lat}, {lng}")
+                        
+                        # Upload to server
+                        files = {"file": ("image.jpg", temp_buffer, "image/jpeg")}
+                        data = {
+                            "latitude": lat,
+                            "longitude": lng,
+                            "accuracy": accuracy,
+                            "timestamp": datetime.now().isoformat()
+                        }
+                        
+                        print("Making request to server...")
+                        print("Headers:", headers)
+                        print("Data:", data)
+                        
+                        response = requests.post(
+                            "http://localhost:8000/vision/process",
+                            files=files,
+                            data=data,
+                            headers=headers
+                        )
+                        
+                        print(f"Server response status: {response.status_code}")
+                        print(f"Server response: {response.text}")
 
-                                if response.status_code == 200:
-                                    page.snack_bar = ft.SnackBar(content=Text("Sighting saved!"))
-                                    page.snack_bar.open = True
-                                    page.update()
-                                    show_main_view()  # Return to main view
-                                else:
-                                    raise Exception(f"Failed to save sighting: {response.text}")
-
-                            except Exception as e:
-                                page.snack_bar = ft.SnackBar(content=Text(f"Error saving sighting: {str(e)}"))
-                                page.snack_bar.open = True
-                                page.update()
-                            finally:
-                                # Clean up
-                                temp_buffer.close()
-
-                        def on_location_error(e):
-                            page.snack_bar = ft.SnackBar(content=Text("Could not get location. Using default coordinates."))
+                        if response.status_code == 200:
+                            print("Sighting saved successfully")
+                            page.snack_bar = ft.SnackBar(content=Text("Sighting saved!"))
                             page.snack_bar.open = True
                             page.update()
-                            
-                            # Fall back to default coordinates
-                            on_location(ft.LocationData({"latitude": 0.0, "longitude": 0.0, "accuracy": 0}))
+                            show_main_view()  # Return to main view
+                        else:
+                            raise Exception(f"Failed to save sighting: {response.text}")
 
-                        # Request location
-                        page.client_storage.clear()
-                        page.get_location(on_location, on_location_error)
-                        
                     except Exception as e:
-                        page.snack_bar = ft.SnackBar(content=Text(f"Error preparing sighting: {str(e)}"))
+                        print(f"Error in handle_save_sighting: {str(e)}")
+                        page.snack_bar = ft.SnackBar(content=Text(f"Error saving sighting: {str(e)}"))
                         page.snack_bar.open = True
                         page.update()
-                
+                    finally:
+                        # Clean up
+                        temp_buffer.close()
+
                 # Display results with Save button
                 content_area.content = Column(
                     controls=[
@@ -765,6 +759,16 @@ def main(page: ft.Page):
             
             def handle_create_sticker(e):
                 try:
+                    print(f"Create sticker button clicked for sighting: {sighting.get('sightingID')}")
+                    
+                    # Check if services/sticker.py exists
+                    if not os.path.exists("src/services/sticker.py"):
+                        raise Exception("Sticker service not found. Please ensure src/services/sticker.py exists.")
+                    
+                    # Check if SAM model weights exist
+                    if not os.path.exists("sam_vit_h_4b8939.pth"):
+                        raise Exception("SAM model weights not found. Please download sam_vit_h_4b8939.pth first.")
+                    
                     # Show loading state
                     page.snack_bar = ft.SnackBar(content=Text("Creating sticker..."))
                     page.snack_bar.open = True
@@ -775,10 +779,17 @@ def main(page: ft.Page):
                     if not image_url:
                         raise Exception("No image URL found")
                         
-                    # Get the image data
-                    response = requests.get(image_url)
+                    print(f"Downloading image from: {image_url}")
+                    # Get the image data with custom headers
+                    headers = {
+                        'User-Agent': 'Mozilla/5.0',
+                        'Origin': 'http://127.0.0.1:15341'
+                    }
+                    response = requests.get(image_url, headers=headers)
                     if response.status_code != 200:
-                        raise Exception("Failed to download image")
+                        raise Exception(f"Failed to download image: {response.status_code}")
+                    
+                    print("Image downloaded successfully")
                     
                     # Save to a temporary file
                     temp_dir = os.path.join(os.getcwd(), "temp")
@@ -788,10 +799,17 @@ def main(page: ft.Page):
                     with open(temp_input, "wb") as f:
                         f.write(response.content)
                     
+                    print(f"Image saved to temp file: {temp_input}")
+                    
                     # Extract the animal using the sticker function
+                    import sys
+                    sys.path.append(os.getcwd())  # Add current directory to Python path
                     from services.sticker import extract_animal
                     output_path = os.path.join(temp_dir, f"sticker_{sighting.get('sightingID')}.png")
+                    print(f"Attempting to create sticker at: {output_path}")
                     extracted_path = extract_animal(temp_input, output_path)
+                    
+                    print(f"Sticker created at: {extracted_path}")
                     
                     # Read the extracted image for download
                     with open(extracted_path, "rb") as f:
@@ -801,15 +819,33 @@ def main(page: ft.Page):
                     os.remove(temp_input)
                     os.remove(extracted_path)
                     
-                    # Trigger download using Flet's download functionality
-                    species_name = sighting.get('species', 'animal').replace(' ', '_').lower()
-                    page.client_storage.set(f"sticker_{species_name}.png", base64.b64encode(sticker_data).decode())
-                    page.launch_url(f"data:image/png;base64,{base64.b64encode(sticker_data).decode()}")
-                    
-                    # Show success message
-                    page.snack_bar = ft.SnackBar(content=Text("Sticker created! Check your downloads."))
-                    page.snack_bar.open = True
-                    page.update()
+                    # Create a more reliable download mechanism
+                    try:
+                        # Save to downloads directory
+                        downloads_dir = os.path.join(os.path.expanduser("~"), "Downloads")
+                        species_name = sighting.get('species', 'animal').replace(' ', '_').lower()
+                        download_path = os.path.join(downloads_dir, f"sticker_{species_name}.png")
+                        
+                        # Save the sticker
+                        with open(download_path, "wb") as f:
+                            f.write(sticker_data)
+                        
+                        print(f"Sticker saved to: {download_path}")
+                        
+                        # Show success message with the file location
+                        page.snack_bar = ft.SnackBar(
+                            content=Text(f"Sticker saved to Downloads folder as sticker_{species_name}.png")
+                        )
+                        page.snack_bar.open = True
+                        page.update()
+                        
+                    except Exception as e:
+                        print(f"Error saving sticker to Downloads: {str(e)}")
+                        # Fallback to browser download if saving to Downloads fails
+                        page.launch_url(f"data:image/png;base64,{base64.b64encode(sticker_data).decode()}")
+                        page.snack_bar = ft.SnackBar(content=Text("Sticker download started..."))
+                        page.snack_bar.open = True
+                        page.update()
                     
                 except Exception as e:
                     print(f"Error creating sticker: {str(e)}")
@@ -817,17 +853,45 @@ def main(page: ft.Page):
                     page.snack_bar.open = True
                     page.update()
 
+            # Ensure image URL is complete and handle CORS
+            image_url = sighting.get('sightingURL', '')
+            if image_url and not image_url.startswith('http'):
+                image_url = f"https://storage.googleapis.com/anima-go.firebasestorage.app/sighting_pics/{image_url}"
+            
+            # Try to load the image directly first
+            try:
+                # Download the image with custom headers
+                headers = {
+                    'User-Agent': 'Mozilla/5.0',
+                    'Origin': 'http://127.0.0.1:15341'
+                }
+                response = requests.get(image_url, headers=headers)
+                if response.status_code == 200:
+                    # Convert to base64
+                    img_base64 = base64.b64encode(response.content).decode()
+                    image_src = f"data:image/jpeg;base64,{img_base64}"
+                else:
+                    print(f"Failed to load image from {image_url}: {response.status_code}")
+                    image_src = None
+            except Exception as e:
+                print(f"Error loading image: {str(e)}")
+                image_src = None
+
             # Create the card with explicit size and margin
             return Container(
                 content=Column(
                     controls=[
                         Container(
                             content=Image(
-                                src=sighting.get('sightingURL'),
+                                src=image_src,
                                 width=120,
                                 height=120,
                                 fit=ft.ImageFit.COVER,
                                 border_radius=10,
+                            ) if image_src else Container(
+                                content=Icon(Icons.IMAGE_NOT_SUPPORTED, size=40, color=Colors.GREY_400),
+                                width=120,
+                                height=120,
                             ),
                             width=120,
                             height=120,

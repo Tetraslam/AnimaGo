@@ -190,14 +190,22 @@ def custom_encoder(obj):
 
 def get_top_users(n):
     users_ref = db.collection('users')
-    query = users_ref.order_by('xp', direction=firestore.Query.DESCENDING).limit(n)
+    query = users_ref.order_by('xp', direction=firestore.Query.DESCENDING)
     results = query.stream()
 
-    top_users = []
+    # Use a dictionary to track unique users by userID
+    unique_users = {}
     for user in results:
-        top_users.append(user.to_dict())
+        user_dict = user.to_dict()
+        user_id = user_dict.get('userID')
+        if user_id and user_id not in unique_users:
+            unique_users[user_id] = user_dict
+            if len(unique_users) >= n:
+                break
 
-    return top_users
+    # Convert back to list and maintain order
+    top_users = list(unique_users.values())
+    return top_users[:n]
 
 def get_user_sightings(user_id: str) -> List[dict]:
     """
