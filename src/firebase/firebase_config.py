@@ -16,6 +16,9 @@ firebase_admin.initialize_app(cred, {
 # Initialize the 'sighting_pics' bucket
 sighting_pics_bucket = storage.bucket('sighting_pics')
 
+# Initialize the 'stickers_pillow' bucket
+stickers_bucket = storage.bucket('stickers_pillow')
+
 db = firestore.client()
 bucket = storage.bucket()
 
@@ -164,3 +167,30 @@ def get_top_users(n):
         top_users.append(user.to_dict())
 
     return top_users
+
+def upload_sticker(user_id: str, from_file_name: str):
+    """
+    Uploads a sticker to the stickers_pillow bucket, organized by userId.
+
+    :param file_name: The name of the file to upload.
+    :param user_id: The ID of the user.
+    """
+    # Create a  stickerID
+    sticker_id = uuid4()
+    
+    file_path = os.path.join("src/temp", from_file_name)
+
+    destination_blob_name = f"{user_id}/{sticker_id}"
+    blob = stickers_bucket.blob(destination_blob_name)
+    blob.upload_from_filename(file_path)
+    print(f"File {file_path} uploaded to {destination_blob_name} in sighting_pics bucket.")
+
+    # Update the user's 'stickers' list
+    user_ref = db.collection('users').where('userID', '==', str(user_id)).limit(1)
+    result = user_ref.get()
+    if result:
+        doc_ref = result[0].reference
+        doc_ref.update({
+            'stickers': firestore.ArrayUnion([str(destination_blob_name)])
+        })
+        print("User updated successfully!")
