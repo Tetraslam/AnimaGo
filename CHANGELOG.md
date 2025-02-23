@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Custom CameraView control with 30 FPS preview
 - Proper camera cleanup on app exit
 - Direct frame capture for vision processing
+- Basic authentication system with register/login functionality
+- Firebase integration for user management and sightings
+- Moondream integration for species detection and description
 
 ### Changed
 - Replaced file picker camera simulation with real camera feed
@@ -25,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved capture UI with live preview
 - Enhanced camera capture workflow with back button and proper view reset
 - Fixed "Capture Another" functionality to properly return to camera view
+- Added auth state management and protected endpoints
+- Improved image processing to store sightings in Firebase
 
 ### Infrastructure
 - Python 3.11+ environment setup

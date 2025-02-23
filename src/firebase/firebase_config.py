@@ -1,23 +1,30 @@
+import json
+import os
+from datetime import datetime
+from typing import List, Optional
+from uuid import UUID, uuid4
+
 import firebase_admin
-from firebase_admin import credentials, firestore, storage # type: ignore
+from firebase_admin import credentials, firestore, storage  # type: ignore
 from google.cloud.firestore import SERVER_TIMESTAMP
 from pydantic import BaseModel, Field, validator
-from typing import List, Optional
-from datetime import datetime
-from uuid import uuid4, UUID
-import os
 
 # Initialize Firebase
 cred = credentials.Certificate("src/firebase/anima-go-50202ba9d2b2.json")
 firebase_admin.initialize_app(cred, {
-    'storageBucket': 'anima-go.appspot.com'
+    'storageBucket': 'anima-go.firebasestorage.app'
 })
 
-# Initialize the 'sighting_pics' bucket
-sighting_pics_bucket = storage.bucket('sighting_pics')
-
+# Initialize Firestore and Storage
 db = firestore.client()
-bucket = storage.bucket()
+bucket = storage.bucket(app=firebase_admin.get_app())
+
+# Verify bucket exists and create if needed
+if not bucket.exists():
+    bucket.create()
+    print(f"Created new bucket: {bucket.name}")
+else:
+    print(f"Using existing bucket: {bucket.name}")
 
 print("Firebase initialized successfully!")
 
@@ -48,70 +55,100 @@ class Achievement(BaseModel):
 
 class User(BaseModel):
     userID: UUID = Field(default_factory=uuid4)
+    email: str
+    password: str
     firstname: str
     lastname: str
-    colorblind: bool
+    colorblind: bool = False
     stickers: List[str] = [] # List of sticker URLs
     sightings: List[UUID] = [] # List of sighting IDs
     achievements: List[Achievement] = []
-    xp: int
+    xp: int = 0
 
 # Repository functions
-import json
 def add_user(user_data: dict):
-    user = User(**user_data)
-    user_dict = json.loads(json.dumps(user.dict(), default=custom_encoder))
-    db.collection('users').add(user_dict)
-    print("User added successfully!")
+    try:
+        # Convert string UUID to UUID object if needed
+        if isinstance(user_data.get('userID'), str):
+            user_data['userID'] = UUID(user_data['userID'])
+        
+        # Convert string UUIDs in sightings list if needed
+        if 'sightings' in user_data:
+            user_data['sightings'] = [UUID(s) if isinstance(s, str) else s for s in user_data['sightings']]
+        
+        # Create User object to validate data
+        user = User(**user_data)
+        
+        # Convert back to dict for Firestore
+        user_dict = json.loads(json.dumps(user.dict(), default=custom_encoder))
+        
+        # Add to Firestore
+        db.collection('users').document(str(user.userID)).set(user_dict)
+        print("User added successfully!")
+        return user_dict
+    except Exception as e:
+        print(f"Error adding user: {str(e)}")
+        raise e
 
-def add_sighting(sighting_data: dict, user_id: str, sighting_pic_filename: str):
-
+def add_sighting(sighting_data: dict, user_id: str, image_bytes: bytes):
     """
-    :param sighting_data: 
-    {
-        "timestamp": image capture timestamp,
-        "coordinates": { lat: 0.0, lng: 0.0 },
-        "species": "Species of the animal in image",
-        "description": "Moondream description of the animal in image"
-    }
-    :param user_id: UUID4
-    :param sighting_pic_filename: The name of the file to upload present in the 'temp' directory.
-    """
-
-    # UserId
-    sighting_data['userID'] = user_id
-
-    # Create sightingID = UUID
-    sighting_id = uuid4()
-    sighting_data['sightingID'] = sighting_id
-
-    # Comments list initially empty
-    sighting_data['comments'] = []
-
-    # Upload the image to the sighting_pics bucket with filename as the sightingID = UUID
-    destination_blob_name = f"{user_id}/{sighting_id}"
-    upload_sighting_image(destination_blob_name, sighting_pic_filename, str(user_id))
-    sighting_data['sightingURL'] = destination_blob_name
-
-    # Add the sighting to the 'sightings_map' collection with sightingID
-    sighting = Sighting(**sighting_data)
-    sighting_dict = json.loads(json.dumps(sighting.dict(), default=custom_encoder))
-    db.collection('sightings_map').add(sighting_dict)
-    user_id = sighting_dict['userID']
+    Add a sighting to Firebase.
     
-    # Update the user's 'sightings' list and increment the user's 'xp' by 100
-    user_ref = db.collection('users').where('userID', '==', str(user_id)).limit(1)
-    result = user_ref.get()
+    :param sighting_data: Dictionary containing sighting details
+    :param user_id: UUID of the user
+    :param image_bytes: Raw bytes of the image
+    """
+    try:
+        # Create sightingID
+        sighting_id = uuid4()
+        sighting_data['sightingID'] = sighting_id
+        sighting_data['userID'] = user_id  # Ensure userID is a string to match schema
 
-    if result:
-        doc_ref = result[0].reference
-        doc_ref.update({
-            'sightings': firestore.ArrayUnion([str(sighting_id)]),
-            'xp': firestore.Increment(100)
+        # Comments list initially empty
+        sighting_data['comments'] = []
 
-        })
-        print("User updated successfully!")
+        # Upload the image to storage
+        destination_blob_name = f"sighting_pics/{user_id}/{sighting_id}.jpg"
+        blob = bucket.blob(destination_blob_name)
+        blob.upload_from_string(image_bytes, content_type='image/jpeg')
+        print(f"Image uploaded to {destination_blob_name}")
+        
+        # Make the blob publicly accessible
+        blob.make_public()
+        
+        # Set the sightingURL to the public URL
+        sighting_data['sightingURL'] = blob.public_url
 
+        # Add timestamps
+        now = datetime.now()
+        sighting_data['createdAt'] = now
+        sighting_data['updatedAt'] = now
+
+        # Add the sighting to the 'sightings_map' collection
+        sighting = Sighting(**sighting_data)
+        sighting_dict = json.loads(json.dumps(sighting.dict(), default=custom_encoder))
+        
+        # Add to sightings_map collection with auto-generated document ID
+        doc_ref = db.collection('sightings_map').document()
+        doc_ref.set(sighting_dict)
+        sighting_doc_id = doc_ref.id
+        print(f"Sighting added with ID: {sighting_doc_id}")
+        
+        # Update user's sightings list with the sightings_map document ID
+        user_ref = db.collection('users').where('userID', '==', user_id).limit(1)
+        result = user_ref.get()
+
+        if result:
+            doc_ref = result[0].reference
+            doc_ref.update({
+                'sightings': firestore.ArrayUnion([sighting_doc_id]),  # Store the sightings_map document ID
+                'xp': firestore.Increment(100)
+            })
+            print(f"User {user_id} updated with sighting {sighting_doc_id}")
+            
+    except Exception as e:
+        print(f"Error adding sighting: {str(e)}")
+        raise e
 
 def upload_sighting_image(destination_blob_name, from_file_name: str, user_id: str):
     """
@@ -121,7 +158,7 @@ def upload_sighting_image(destination_blob_name, from_file_name: str, user_id: s
     :param user_id: The ID of the user.
     """
     file_path = os.path.join("src/temp", from_file_name)
-    blob = sighting_pics_bucket.blob(destination_blob_name)
+    blob = bucket.blob(destination_blob_name)
     blob.upload_from_filename(file_path)
     print(f"File {file_path} uploaded to {destination_blob_name} in sighting_pics bucket.")
 
@@ -162,3 +199,42 @@ def get_top_users(n):
         top_users.append(user.to_dict())
 
     return top_users
+
+def get_user_sightings(user_id: str) -> List[dict]:
+    """
+    Fetch all sightings for a given user.
+    
+    :param user_id: UUID of the user
+    :return: List of sighting dictionaries with full details
+    """
+    try:
+        # Get user document
+        user_ref = db.collection('users').document(user_id)
+        user_doc = user_ref.get()
+        
+        if not user_doc.exists:
+            print(f"User {user_id} not found")
+            return []
+            
+        # Get sighting IDs from user document
+        user_data = user_doc.to_dict()
+        sighting_ids = user_data.get('sightings', [])
+        print(f"Found {len(sighting_ids)} sighting IDs for user {user_id}")
+        
+        # Fetch full sighting details
+        sightings = []
+        for sighting_id in sighting_ids:
+            sighting_doc = db.collection('sightings_map').document(sighting_id).get()
+            if sighting_doc.exists:
+                sighting_data = sighting_doc.to_dict()
+                sightings.append(sighting_data)
+                print(f"Found sighting {sighting_id}")
+            else:
+                print(f"Sighting {sighting_id} not found")
+        
+        print(f"Returning {len(sightings)} sightings")
+        return sightings
+        
+    except Exception as e:
+        print(f"Error fetching user sightings: {str(e)}")
+        return []

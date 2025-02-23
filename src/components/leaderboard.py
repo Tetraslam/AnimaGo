@@ -1,5 +1,7 @@
 import flet as ft
+
 from firebase.firebase_config import get_top_users
+
 
 class LeaderboardSection(ft.Column):
     def __init__(self, page: ft.Page, **kwargs):
@@ -47,7 +49,7 @@ class LeaderboardSection(ft.Column):
                                 ft.Text(
                                     f"XP: {user.get('xp', 0):,}",
                                     size=14,
-                                    color=ft.colors.GREEN
+                                    color=ft.Colors.GREEN
                                 )
                             ],
                             spacing=2,
@@ -60,7 +62,7 @@ class LeaderboardSection(ft.Column):
             ),
             padding=10,
             border_radius=10,
-            bgcolor=ft.colors.SURFACE_VARIANT,
+            bgcolor=ft.Colors.BLUE_GREY_800,
             margin=ft.margin.only(bottom=5),
             on_click=lambda _: self.show_user_profile(user),
             ink=True,  # Add ripple effect
@@ -94,7 +96,7 @@ class LeaderboardSection(ft.Column):
                         controls=[
                             ft.IconButton(
                                 icon=ft.icons.CLOSE,
-                                icon_color=ft.colors.WHITE,
+                                icon_color=ft.Colors.WHITE,
                                 on_click=close_profile,
                             ),
                         ],
@@ -113,7 +115,7 @@ class LeaderboardSection(ft.Column):
                                 ft.Text(
                                     f"XP: {user.get('xp', 0):,}",
                                     size=24,
-                                    color=ft.colors.GREEN,
+                                    color=ft.Colors.GREEN,
                                     text_align=ft.TextAlign.CENTER
                                 ),
                             ],
@@ -164,7 +166,7 @@ class LeaderboardSection(ft.Column):
                             spacing=20
                         ),
                         padding=20,
-                        bgcolor=ft.colors.SURFACE_VARIANT,
+                        bgcolor=ft.Colors.BLUE_GREY_800,
                         border_radius=10
                     ),
                     # Achievements section
@@ -176,7 +178,7 @@ class LeaderboardSection(ft.Column):
                                     ft.Container(
                                         content=ft.Text(achievement.get('achievementName', 'Unknown Achievement')),
                                         padding=10,
-                                        bgcolor=ft.colors.SURFACE_VARIANT,
+                                        bgcolor=ft.Colors.BLUE_GREY_800,
                                         border_radius=10
                                     )
                                     for achievement in user.get('achievements', [])[:3]  # Show last 3 achievements
@@ -216,7 +218,7 @@ class LeaderboardSection(ft.Column):
                         content=ft.Text(
                             "No users found",
                             italic=True,
-                            color=ft.colors.GREY_400,
+                            color=ft.Colors.GREY_400,
                             text_align=ft.TextAlign.CENTER
                         ),
                         alignment=ft.alignment.center
@@ -235,7 +237,7 @@ class LeaderboardSection(ft.Column):
                 controls=[
                     ft.Text(
                         "Error loading leaderboard",
-                        color=ft.colors.RED,
+                        color=ft.Colors.RED,
                         text_align=ft.TextAlign.CENTER
                     ),
                     ft.TextButton(
@@ -256,7 +258,7 @@ class LeaderboardSection(ft.Column):
             self.controls = [
                 ft.Text(
                     "Error refreshing leaderboard",
-                    color=ft.colors.RED,
+                    color=ft.Colors.RED,
                     text_align=ft.TextAlign.CENTER
                 ),
                 ft.TextButton(
@@ -295,7 +297,7 @@ class LeaderboardSection(ft.Column):
             self.controls = [
                 ft.Text(
                     "Error loading leaderboard",
-                    color=ft.colors.RED,
+                    color=ft.Colors.RED,
                     text_align=ft.TextAlign.CENTER
                 ),
                 ft.TextButton(
