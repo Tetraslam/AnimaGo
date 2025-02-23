@@ -110,36 +110,69 @@ def main(page: ft.Page):
     def handle_capture(frame):
         # Convert frame to RGB
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        
+        # Convert frame to format Flet can display
         pil_image = PILImage.fromarray(rgb_frame)
         img_byte_arr = io.BytesIO()
+        pil_image.save(img_byte_arr, format='PNG')
+        img_byte_arr = img_byte_arr.getvalue()
+        img_base64 = base64.b64encode(img_byte_arr).decode()
         
-        # Show loading state
-        content_area.content = Column(
-            controls=[
-                Text("Processing image...", size=20),
-                ft.ProgressRing(),
-            ],
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-        )
-        page.update()
-        
-        # TODO: Process image with vision system
-        # For now, just show a success message
-        content_area.content = Column(
-            controls=[
-                Text("Found:", size=24, weight=ft.FontWeight.BOLD),
-                Text("• Red Fox (87% confidence)", color=Colors.GREEN),
-                Text("• European Rabbit (92% confidence)", color=Colors.GREEN),
-                Container(height=20),
-                ElevatedButton(
-                    "Capture Another",
-                    icon=Icons.CAMERA_ALT,
-                    on_click=lambda _: start_camera(),
-                ),
-            ],
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-        )
-        page.update()
+        def process_image(e):
+            # Show loading state
+            content_area.content = Column(
+                controls=[
+                    Text("Processing image...", size=20),
+                    ft.ProgressRing(),
+                ],
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            )
+            page.update()
+            
+            # This is where you add your image processing logic
+            # The 'frame' variable contains the original CV2 frame in BGR format
+            # rgb_frame contains the RGB version
+            
+            # Example of how you might process the image:
+            try:
+                # Your image processing code here
+                # For example:
+                # results = your_ml_model.predict(frame)
+                # detected_animals = process_results(results)
+                
+                # For now, showing dummy results
+                
+                content_area.content = Column(
+                    controls=[
+                        Text("Found:", size=24, weight=ft.FontWeight.BOLD),
+                        Text("• Red Fox (87% confidence)", color=Colors.GREEN),
+                        Text("• European Rabbit (92% confidence)", color=Colors.GREEN),
+                        Container(height=20),
+                        ElevatedButton(
+                            "Capture Another",
+                            icon=Icons.CAMERA_ALT,
+                            on_click=lambda _: start_camera(),
+                        ),
+                    ],
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                )
+            except Exception as e:
+                # Handle any errors during processing
+                content_area.content = Column(
+                    controls=[
+                        Text("Error processing image", size=24, color=Colors.RED),
+                        Text(str(e), size=16),
+                        Container(height=20),
+                        ElevatedButton(
+                            "Try Again",
+                            icon=Icons.CAMERA_ALT,
+                            on_click=lambda _: start_camera(),
+                        ),
+                    ],
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                )
+            finally:
+                page.update()
     
     # Create camera view
     camera_view, start_camera, stop_camera = create_camera_view(handle_capture, page)
