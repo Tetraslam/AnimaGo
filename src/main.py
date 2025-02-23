@@ -14,6 +14,7 @@ from PIL import Image as PILImage
 
 from components.achievements import AchievementsSection
 from components.leaderboard import LeaderboardSection
+from components.biodex import BiodexSection
 
 
 @dataclass
@@ -324,47 +325,9 @@ def main(page: ft.Page):
     )
     
     # View: Biodex
-    biodex_view = Column(
-        controls=[
-            Text("Your Biodex", size=32, weight=ft.FontWeight.BOLD),
-            Text("Animals you've discovered", size=16),
-            Container(height=20),
-            Row(
-                controls=[
-                    Container(
-                        content=Column(
-                            controls=[
-                                Icon(Icons.PETS, size=40, color=Colors.GREEN),
-                                Text("Red Fox", size=16),
-                                Text("Common", size=12, color=Colors.GREY_400),
-                            ],
-                            spacing=5,
-                            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                        ),
-                        padding=15,
-                        bgcolor=CARD_COLOR,
-                        border_radius=10,
-                    ),
-                    Container(
-                        content=Column(
-                            controls=[
-                                Icon(Icons.PETS, size=40, color=Colors.BLUE),
-                                Text("Rabbit", size=16),
-                                Text("Common", size=12, color=Colors.GREY_400),
-                            ],
-                            spacing=5,
-                            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                        ),
-                        padding=15,
-                        bgcolor=CARD_COLOR,
-                        border_radius=10,
-                    ),
-                ],
-                spacing=10,
-                alignment=ft.MainAxisAlignment.CENTER,
-            ),
-        ],
-        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+    biodex_view = Container(
+        content=BiodexSection(page=page),
+        padding=5,
     )
     
     # View: Profile
@@ -435,7 +398,7 @@ def main(page: ft.Page):
                                     content=Column(
                                         controls=[
                                             Text(
-                                                "3",
+                                                "5",
                                                 size=24,
                                                 weight=ft.FontWeight.BOLD,
                                             ),
@@ -492,11 +455,6 @@ def main(page: ft.Page):
                       content=biodex_view,
                       padding=padding.only(top=10, left=10, right=10),
                     ),
-                ),
-                Tab(
-                    text="Leaderboard",
-                    icon=Icons.LEADERBOARD_OUTLINED,
-                    content=leaderboard_view,
                 ),
                 Tab(
                     text="Leaderboard",
