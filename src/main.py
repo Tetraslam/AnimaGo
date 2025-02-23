@@ -6,6 +6,7 @@ import time
 import cv2
 import flet as ft
 import numpy as np
+import requests
 from flet import (Colors, Column, Container, ElevatedButton, Icon, IconButton,
                   Icons, Image, Page, Row, Tab, Tabs, Text, View, padding)
 from PIL import Image as PILImage
@@ -15,8 +16,8 @@ def create_camera_view(on_capture, page: ft.Page):
     camera = None
     is_running = False
     image = ft.Image(
-        width=640,
-        height=480,
+        width=336,
+        height=252,
         fit=ft.ImageFit.CONTAIN,
         border_radius=10,
     )
@@ -89,13 +90,16 @@ def main(page: ft.Page):
     # App configuration
     page.title = "AnimaGo"
     page.theme_mode = ft.ThemeMode.DARK
-    page.padding = padding.only(top=50)
     page.window_bgcolor = Colors.TRANSPARENT
+    page.spacing = 0
+    page.padding = padding.only(top=40)
     
     # Define reusable colors
     CARD_COLOR = Colors.BLUE_GREY_800
     
     def handle_capture(frame):
+        global img_byte_arr, img_base64  # Make these variables accessible in process_image
+        
         # Convert frame to RGB
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         
@@ -106,7 +110,11 @@ def main(page: ft.Page):
         img_byte_arr = img_byte_arr.getvalue()
         img_base64 = base64.b64encode(img_byte_arr).decode()
         
-        def process_image(e):
+        # Immediately call process_image instead of waiting for button click
+        process_image(None)  # Pass None since we don't need the event parameter
+    
+    def process_image(e):
+        try:
             # Show loading state
             content_area.content = Column(
                 controls=[
@@ -117,24 +125,32 @@ def main(page: ft.Page):
             )
             page.update()
             
-            # This is where you add your image processing logic
-            # The 'frame' variable contains the original CV2 frame in BGR format
-            # rgb_frame contains the RGB version
-            
-            # Example of how you might process the image:
             try:
-                # Your image processing code here
-                # For example:
-                # results = your_ml_model.predict(frame)
-                # detected_animals = process_results(results)
+                # Make request to Moondream endpoint
+                files = {
+                    "file": ("image.png", io.BytesIO(img_byte_arr), "image/png")
+                }
+                response = requests.post("http://localhost:8000/moondream/describe", files=files)
                 
-                # For now, showing dummy results
+                if response.status_code != 200:
+                    error_detail = response.json().get('detail', 'Unknown error')
+                    raise Exception(f"API request failed: {error_detail}")
+                    
+                result = response.json()
+                description = result.get('description', 'No description available')
                 
+                # Display results
                 content_area.content = Column(
                     controls=[
-                        Text("Found:", size=24, weight=ft.FontWeight.BOLD),
-                        Text("• Red Fox (87% confidence)", color=Colors.GREEN),
-                        Text("• European Rabbit (92% confidence)", color=Colors.GREEN),
+                        Text("Analysis:", size=24, weight=ft.FontWeight.BOLD),
+                        Image(
+                            src_base64=img_base64,
+                            width=300,
+                            height=300,
+                            fit=ft.ImageFit.CONTAIN,
+                        ),
+                        Container(height=10),
+                        Text(description, size=16),
                         Container(height=20),
                         ElevatedButton(
                             "Capture Another",
@@ -159,8 +175,23 @@ def main(page: ft.Page):
                     ],
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 )
-            finally:
-                page.update()
+        except Exception as e:
+            # Handle any errors during processing
+            content_area.content = Column(
+                controls=[
+                    Text("Error processing image", size=24, color=Colors.RED),
+                    Text(str(e), size=16),
+                    Container(height=20),
+                    ElevatedButton(
+                        "Try Again",
+                        icon=Icons.CAMERA_ALT,
+                        on_click=lambda _: start_camera(),
+                    ),
+                ],
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            )
+        finally:
+            page.update()
     
     # Create camera view
     camera_view, start_camera, stop_camera = create_camera_view(handle_capture, page)
@@ -170,7 +201,7 @@ def main(page: ft.Page):
         controls=[
             Text("\n  Ready to discover\n  wildlife?", size=32, weight=ft.FontWeight.BOLD),
             Text("Point your camera at an animal to begin", size=16),
-            Container(height=20),
+            Container(height=8),
             camera_view,
         ],
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
@@ -275,26 +306,39 @@ def main(page: ft.Page):
                 Tab(
                     text="Capture",
                     icon=Icons.CAMERA_ALT_OUTLINED,
-                    content=capture_view,
+                    content=Container(
+                      content=capture_view,
+                      padding=padding.only(top=10, left=10, right=10),
+                    ),
                 ),
                 Tab(
-                    text="Map",
+                    text="Map", 
                     icon=Icons.MAP_OUTLINED,
-                    content=map_view,
+                    content=Container(
+                      content=map_view,
+                      padding=padding.only(top=10, left=10, right=10),
+                    ),
                 ),
                 Tab(
                     text="Biodex",
-                    icon=Icons.MENU_BOOK_OUTLINED,
-                    content=biodex_view,
+                    icon=Icons.MENU_BOOK_OUTLINED, 
+                    content=Container(
+                      content=biodex_view,
+                      padding=padding.only(top=10, left=10, right=10),
+                    ),
                 ),
                 Tab(
                     text="Profile",
                     icon=Icons.PERSON_OUTLINED,
-                    content=profile_view,
+                    content=Container(
+                      content=profile_view,
+                      padding=padding.only(top=10, left=10, right=10),
+                    ),
                 ),
             ],
         ),
         expand=True,
+        padding=0,
     )
     
     # Handle cleanup
