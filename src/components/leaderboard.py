@@ -12,7 +12,7 @@ class LeaderboardSection(ft.Column):
         self._build()
 
     def create_user_row(self, rank: int, user: dict) -> ft.Container:
-        # Medal emojis for top 3
+        """Create a leaderboard item for a user"""
         medal_icons = {
             1: "🥇",
             2: "🥈",
@@ -25,7 +25,7 @@ class LeaderboardSection(ft.Column):
         return ft.Container(
             content=ft.Row(
                 controls=[
-                    # Rank
+                    # Rank column
                     ft.Container(
                         content=ft.Text(
                             rank_display,
@@ -35,7 +35,7 @@ class LeaderboardSection(ft.Column):
                         width=50,
                         alignment=ft.alignment.center
                     ),
-                    # User info
+                    # User info column
                     ft.Container(
                         content=ft.Column(
                             controls=[
@@ -61,8 +61,142 @@ class LeaderboardSection(ft.Column):
             padding=10,
             border_radius=10,
             bgcolor=ft.colors.SURFACE_VARIANT,
-            margin=ft.margin.only(bottom=5)
+            margin=ft.margin.only(bottom=5),
+            on_click=lambda _: self.show_user_profile(user),
+            ink=True,  # Add ripple effect
+            data=user  # Store user data for reference
         )
+
+    def show_user_profile(self, user: dict):
+        """Show detailed profile view for a user"""
+        def close_profile(_):
+            # Clear the current view
+            self.page.clean()
+            
+            # Recreate the main content
+            content_area = self.page.session.get("content_area")
+            if content_area:
+                content_area.visible = True
+                self.page.add(content_area)
+                self.page.update()
+
+        # Hide the main content
+        content_area = self.page.session.get("content_area")
+        if content_area:
+            content_area.visible = False
+
+        # Create profile view
+        profile_view = ft.Container(
+            content=ft.Column(
+                controls=[
+                    # Close button
+                    ft.Row(
+                        controls=[
+                            ft.IconButton(
+                                icon=ft.icons.CLOSE,
+                                icon_color=ft.colors.WHITE,
+                                on_click=close_profile,
+                            ),
+                        ],
+                        alignment=ft.MainAxisAlignment.END,
+                    ),
+                    # Profile header
+                    ft.Container(
+                        content=ft.Column(
+                            controls=[
+                                ft.Text(
+                                    f"{user.get('firstname', 'Unknown')} {user.get('lastname', '')}",
+                                    size=32,
+                                    weight=ft.FontWeight.BOLD,
+                                    text_align=ft.TextAlign.CENTER
+                                ),
+                                ft.Text(
+                                    f"XP: {user.get('xp', 0):,}",
+                                    size=24,
+                                    color=ft.colors.GREEN,
+                                    text_align=ft.TextAlign.CENTER
+                                ),
+                            ],
+                            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                            spacing=10
+                        ),
+                        margin=ft.margin.only(bottom=20)
+                    ),
+                    # Stats section
+                    ft.Container(
+                        content=ft.Column(
+                            controls=[
+                                ft.Text("Statistics", size=24, weight=ft.FontWeight.BOLD),
+                                ft.Row(
+                                    controls=[
+                                        ft.Container(
+                                            content=ft.Column(
+                                                controls=[
+                                                    ft.Text(
+                                                        str(len(user.get('sightings', []))),
+                                                        size=24,
+                                                        weight=ft.FontWeight.BOLD
+                                                    ),
+                                                    ft.Text("Sightings")
+                                                ],
+                                                horizontal_alignment=ft.CrossAxisAlignment.CENTER
+                                            ),
+                                            expand=True
+                                        ),
+                                        ft.Container(
+                                            content=ft.Column(
+                                                controls=[
+                                                    ft.Text(
+                                                        str(len(user.get('achievements', []))),
+                                                        size=24,
+                                                        weight=ft.FontWeight.BOLD
+                                                    ),
+                                                    ft.Text("Achievements")
+                                                ],
+                                                horizontal_alignment=ft.CrossAxisAlignment.CENTER
+                                            ),
+                                            expand=True
+                                        ),
+                                    ],
+                                    alignment=ft.MainAxisAlignment.SPACE_EVENLY
+                                )
+                            ],
+                            spacing=20
+                        ),
+                        padding=20,
+                        bgcolor=ft.colors.SURFACE_VARIANT,
+                        border_radius=10
+                    ),
+                    # Achievements section
+                    ft.Container(
+                        content=ft.Column(
+                            controls=[
+                                ft.Text("Recent Achievements", size=24, weight=ft.FontWeight.BOLD),
+                                *[
+                                    ft.Container(
+                                        content=ft.Text(achievement.get('achievementName', 'Unknown Achievement')),
+                                        padding=10,
+                                        bgcolor=ft.colors.SURFACE_VARIANT,
+                                        border_radius=10
+                                    )
+                                    for achievement in user.get('achievements', [])[:3]  # Show last 3 achievements
+                                ]
+                            ],
+                            spacing=10
+                        ),
+                        margin=ft.margin.only(top=20)
+                    ) if user.get('achievements') else ft.Container()  # Only show if user has achievements
+                ],
+                scroll=ft.ScrollMode.AUTO
+            ),
+            padding=20,
+            expand=True
+        )
+
+        # Clear the page and add the profile view
+        self.page.clean()
+        self.page.add(profile_view)
+        self.page.update()
 
     def create_leaderboard_list(self) -> ft.Column:
         try:

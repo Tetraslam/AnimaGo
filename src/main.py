@@ -292,7 +292,7 @@ def main(page: ft.Page):
                                                 size=24,
                                                 weight=ft.FontWeight.BOLD,
                                             ),
-                                            Text("Discoveries"),
+                                            Text("Sightings"),
                                         ],
                                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                                     ),

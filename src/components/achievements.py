@@ -207,24 +207,10 @@ class AchievementsSection(ft.Column):
                 title="First Flight",
                 description="Find a flying animal.",
                 icon=Icons.FLIGHT,
-                progress=0.3,
-                color="#00E676",  # Cyan
+                progress=1,
+                color="#00E676",  # Green
             ),
-            AchievementData(
-                title="Ears of the Wild",
-                description="Identify an animal using only its sound.",
-                icon=Icons.HEADSET,
-                progress=0.6,
-                color="#FFC107",  # Amber
-            ),
-            AchievementData(
-                title="Night Explorer",
-                description="Find an animal at night.",
-                icon=Icons.NIGHTLIGHT,
-                progress=0.0,
-                color="#9C27B0",
-            ),
-            AchievementData(
+                        AchievementData(
                 title="Biodex Beginner",
                 description="Complete 10% of your Biodex.",
                 icon=Icons.BOOK,
@@ -236,7 +222,35 @@ class AchievementsSection(ft.Column):
                 description="Complete 75% of your Biodex in a biome.",
                 icon=Icons.COMPUTER,
                 progress=0.2,
-                color="#000000",  # Black
+                color="#FFFFFF",  # White
+            ),
+            AchievementData(
+                title="Ears of the Wild",
+                description="Identify an animal using only its sound.",
+                icon=Icons.HEADSET,
+                progress=1,
+                color="#FFC107",  # Amber
+            ),
+            AchievementData(
+                title="Night Explorer",
+                description="Find an animal at night.",
+                icon=Icons.NIGHTLIGHT,
+                progress=1,
+                color="#9C27B0",
+            ),
+            AchievementData(
+                title="Night Stalker",
+                description="Capture 10 different nocturnal animals.",
+                icon=Icons.SHIELD_MOON,
+                progress=.3,
+                color="#35336b",
+            ),
+            AchievementData(
+                title="Nocturnal Listener",
+                description="Identify an animal at night using sound recognition.",
+                icon=Icons.SHIELD_MOON_SHARP,
+                progress=0,
+                color="#F6F1D5",
             ),
             AchievementData(
                 title="Citizen Scientist",
@@ -245,6 +259,56 @@ class AchievementsSection(ft.Column):
                 progress=0,
                 color=Colors.GREEN_ACCENT_400,
             ),
+            AchievementData(
+                title="Trailblazer",
+                description="Discover 10 different species.",
+                icon=Icons.MAP,
+                progress=1,
+                color=Colors.BLUE_ACCENT_400,
+            ),
+            AchievementData(
+                title="Data Contributor",
+                description="Submit 50 valid sightings.",
+                icon=Icons.ADDCHART,
+                progress=.84,
+                color=Colors.RED_ACCENT_400,
+            ),
+            AchievementData(
+                title="Master Tracker",
+                description="Capture 100 different species",
+                icon=Icons.FIBER_PIN,
+                progress=.42,
+                color="#EFBF04", #Gold
+            ),
+            AchievementData(
+                title="On a Roll",
+                description="Capture an animal every day for a week.",
+                icon=Icons.HOURGLASS_BOTTOM_ROUNDED,
+                progress=2/7,
+                color=Colors.YELLOW_ACCENT_400,
+            ),
+            AchievementData(
+                title="Wildlife Warrior",
+                description="Maintain a daily streak for a month.",
+                icon=Icons.CALENDAR_MONTH,
+                progress=1/15,
+                color="#008000",
+            ),
+            AchievementData(
+                title="Evolutionary Mystery",
+                description="Capture a visually distinct species never cataloged before.",
+                icon=Icons.ADD_CHART_ROUNDED,
+                progress=0,
+                color="#717e00",  # Oil Green
+            ),
+            AchievementData(
+                title="Seasonal Explorer",
+                description="Capture an animal in each season.",
+                icon=Icons.CLOUD,
+                progress=.5,
+                color="#87CEEB",  # Sky Blue
+            ),
+            
         ]
         self._build()
 
